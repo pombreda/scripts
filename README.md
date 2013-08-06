@@ -10,6 +10,7 @@ the JSON response of the call to api.23andme.com/1/genomes/, and the
 raw 23andMe data from 23andme.com. Details in the script.
 
 usage:
+
     go run compare_api_raw_download.go
 
 output:
