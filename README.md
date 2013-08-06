@@ -13,6 +13,7 @@ usage:
     go run compare_api_raw_download.go
 
 output:
+
     2013/08/05 19:41:04 ApiCall: AA RawDataCall:    Total: 26
     SNPS: rs1006094, rs10215320, rs10231034, rs10487532, rs11535222, rs12533751,
     rs12534123,
