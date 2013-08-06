@@ -9,6 +9,9 @@ You need to download three files: the index-to-SNP key from the API,
 the JSON response of the call to api.23andme.com/1/genomes/, and the
 raw 23andMe data from 23andme.com. Details in the script.
 
+When you have these three files in your directory, run the script. It will
+output the mismatches between the API and the raw 23andMe download.
+
 usage:
 
     go run compare_api_raw_download.go
