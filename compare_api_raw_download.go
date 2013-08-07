@@ -124,7 +124,7 @@ func getCallpairs(indexToSNP *map[int64]string,
 	}
 	var genomes GenomesEndpoint
 	json.Unmarshal(jsondata, &genomes)
-	for index := 0; index < len(genomes.Genome)/2; index += 2 {
+	for index := 0; index < len(genomes.Genome); index += 2 {
 		api_call := fmt.Sprintf("%s%s", string(genomes.Genome[index]), string(genomes.Genome[index+1]))
 		snpstr, _ := (*indexToSNP)[int64(index/2)]
 		raw_data_call, _ := (*SNPtoCall)[snpstr]
@@ -154,7 +154,7 @@ func printAndCalculateMismatches(callpairs map[CallPair][]SNP, correct, incorrec
 	}
 	sort.Sort(mismatches)
 	for _, mismatch := range mismatches {
-		log.Printf("ApiCall: %s\tRawDataCall: %s\tTotal: %d\t\n", mismatch.ApiCall, mismatch.RawDataCall, mismatch.Count)
+		fmt.Printf("ApiCall: %s\tRawDataCall: %s\tTotal: %d\t\n", mismatch.ApiCall, mismatch.RawDataCall, mismatch.Count)
         buffer := bytes.Buffer{}
         buffer.WriteString("SNPS: ")
         for i, snp := range callpairs[mismatch.CallPair] {
@@ -166,7 +166,7 @@ func printAndCalculateMismatches(callpairs map[CallPair][]SNP, correct, incorrec
         buffer.WriteString("\n\n")
         fmt.Print(buffer.String())
 	}
-	log.Printf("Same: %d, Mismatches: %d, Same: %f%%", correct, incorrect, float32(correct)/float32(incorrect+correct)*100)
+	fmt.Printf("Same: %d, Mismatches: %d, Same: %f%%", correct, incorrect, float32(correct)/float32(incorrect+correct)*100)
 }
 
 func main() {
