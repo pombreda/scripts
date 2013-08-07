@@ -30,6 +30,8 @@ var (
 		"CC|C": true,
 		"GG|G": true,
 		"TT|T": true,
+		"DD|D": true,
+		"II|I": true,
 		"__|":  true,
 	}
 )
@@ -155,16 +157,16 @@ func printAndCalculateMismatches(callpairs map[CallPair][]SNP, correct, incorrec
 	sort.Sort(mismatches)
 	for _, mismatch := range mismatches {
 		fmt.Printf("ApiCall: %s\tRawDataCall: %s\tTotal: %d\t\n", mismatch.ApiCall, mismatch.RawDataCall, mismatch.Count)
-        buffer := bytes.Buffer{}
-        buffer.WriteString("SNPS: ")
-        for i, snp := range callpairs[mismatch.CallPair] {
-            buffer.WriteString(fmt.Sprintf("%s, ", snp))
-            if (i%6 == 0) && (i > 0) {
-                buffer.WriteString("\n")
-            }
-        }
-        buffer.WriteString("\n\n")
-        fmt.Print(buffer.String())
+		buffer := bytes.Buffer{}
+		buffer.WriteString("SNPS: ")
+		for i, snp := range callpairs[mismatch.CallPair] {
+			buffer.WriteString(fmt.Sprintf("%s, ", snp))
+			if (i%6 == 0) && (i > 0) {
+				buffer.WriteString("\n")
+			}
+		}
+		buffer.WriteString("\n\n")
+		fmt.Print(buffer.String())
 	}
 	fmt.Printf("Same: %d, Mismatches: %d, Same: %f%%", correct, incorrect, float32(correct)/float32(incorrect+correct)*100)
 }
