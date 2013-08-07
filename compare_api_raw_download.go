@@ -124,7 +124,7 @@ func getCallpairs(indexToSNP *map[int64]string,
 	}
 	var genomes GenomesEndpoint
 	json.Unmarshal(jsondata, &genomes)
-	for index := 0; index < len(genomes.Genome)/2; index += 2 {
+	for index := 0; index < len(genomes.Genome); index += 2 {
 		api_call := fmt.Sprintf("%s%s", string(genomes.Genome[index]), string(genomes.Genome[index+1]))
 		snpstr, _ := (*indexToSNP)[int64(index/2)]
 		raw_data_call, _ := (*SNPtoCall)[snpstr]
