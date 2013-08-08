@@ -12,7 +12,7 @@ output the mismatches between the API and the raw 23andMe download.
 
 usage:
 
-    go run compare_api_raw_download.go
+    go run compare_api_raw_download.go -a apidata.txt -k snps.data -r rawdata.txt
 
 output:
 

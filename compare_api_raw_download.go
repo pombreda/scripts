@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -11,17 +12,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-)
-
-// You need these files present to run the check.
-const (
-	// Save https://www.23andme.com/you/download/
-	// Unzip it, and rename genome_Your_Name_Full_timestamp.txt -> rawdata.txt
-	RAWDATA_FILENAME = "rawdata.txt"
-	// curl https://api.23andme.com/1/genomes/192889f1/ > apidata.txt
-	API_DATA_FILENAME = "apidata.txt"
-	// curl https://api.23andme.com/res/txt/snps.data
-	KEY_FILENAME = "snps.data"
 )
 
 var (
@@ -35,6 +25,10 @@ var (
 		"__|":  true,
 		"--|":  true,
 	}
+	FLAGS            = []string{"a", "k", "r"}
+	filename_rawdata string
+	filename_apidata string
+	filename_key     string
 )
 
 type CallPair struct {
@@ -61,13 +55,13 @@ func (m Mismatches) Swap(i, j int)      { m[i], m[j] = m[j], m[i] }
 func (m Mismatches) Len() int           { return len(m) }
 func (m Mismatches) Less(i, j int) bool { return m[i].Count > m[j].Count }
 
-func getSNPstoCall() *map[string]string {
+func getSNPstoCall(filename_rawdata string) *map[string]string {
 	var (
 		file *os.File
 		line []byte
 		err  error
 	)
-	if file, err = os.Open(RAWDATA_FILENAME); err != nil {
+	if file, err = os.Open(filename_rawdata); err != nil {
 		log.Fatal(err)
 	}
 	defer file.Close()
@@ -87,14 +81,14 @@ func getSNPstoCall() *map[string]string {
 	return &SNPtoCall
 }
 
-func getIndexToSNP() *map[int64]string {
+func getIndexToSNP(filename_key string) *map[int64]string {
 	var (
 		file *os.File
 		line []byte
 		err  error
 	)
 	indexToSNP := make(map[int64]string, 1050000)
-	if file, err = os.Open(KEY_FILENAME); err != nil {
+	if file, err = os.Open(filename_key); err != nil {
 		log.Fatal(err)
 	}
 	defer file.Close()
@@ -117,11 +111,11 @@ func getIndexToSNP() *map[int64]string {
 	return &indexToSNP
 }
 
-func getCallpairs(indexToSNP *map[int64]string,
+func getCallpairs(filename_apidata string, indexToSNP *map[int64]string,
 	SNPtoCall *map[string]string) (callpairs map[CallPair][]SNP, correct, incorrect int) {
 	var err error
 	callpairs = make(map[CallPair][]SNP, 10)
-	jsondata, err := ioutil.ReadFile(API_DATA_FILENAME)
+	jsondata, err := ioutil.ReadFile(filename_apidata)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -172,9 +166,25 @@ func printAndCalculateMismatches(callpairs map[CallPair][]SNP, correct, incorrec
 	fmt.Printf("Same: %d, Mismatches: %d, Same: %f%%", correct, incorrect, float32(correct)/float32(incorrect+correct)*100)
 }
 
+func init() {
+	flag.StringVar(&filename_rawdata, "r", "", "filename of raw data from https://www.23andme.com/you/download/ file (unzipped)")
+	flag.StringVar(&filename_apidata, "a", "", "filename of API data from https://api.23andme.com/1/genomes/:profile_id/")
+	flag.StringVar(&filename_key, "k", "", "filename of downloaded https://api.23andme.com/res/txt/snps.data")
+}
+
 func main() {
-	SNPtoCall := getSNPstoCall()
-	indexToSNP := getIndexToSNP()
-	callpairs, correct, incorrect := getCallpairs(indexToSNP, SNPtoCall)
+	flag.Parse()
+	// Require all command-line arguments
+	for _, name := range FLAGS {
+		f := flag.Lookup(name)
+		if f.Value.String() == f.DefValue {
+			fmt.Printf("Must pass -%s: %s\n", f.Name, f.Usage)
+			os.Exit(1)
+		}
+	}
+
+	SNPtoCall := getSNPstoCall(filename_rawdata)
+	indexToSNP := getIndexToSNP(filename_key)
+	callpairs, correct, incorrect := getCallpairs(filename_apidata, indexToSNP, SNPtoCall)
 	printAndCalculateMismatches(callpairs, correct, incorrect)
 }
