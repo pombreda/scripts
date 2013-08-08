@@ -8,7 +8,6 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"runtime"
 	"sort"
 	"strconv"
 	"strings"
@@ -173,27 +172,9 @@ func printAndCalculateMismatches(callpairs map[CallPair][]SNP, correct, incorrec
 	fmt.Printf("Same: %d, Mismatches: %d, Same: %f%%", correct, incorrect, float32(correct)/float32(incorrect+correct)*100)
 }
 
-func init() {
-	runtime.GOMAXPROCS(runtime.NumCPU())
-}
-
 func main() {
-	done := make(chan bool)
-	var (
-		SNPtoCall  *map[string]string
-		indexToSNP *map[int64]string
-	)
-	go func() {
-		SNPtoCall = getSNPstoCall()
-		done <- true
-	}()
-	go func() {
-		indexToSNP = getIndexToSNP()
-		done <- true
-	}()
-	for i := 0; i < 2; i++ {
-		<-done
-	}
+	SNPtoCall := getSNPstoCall()
+	indexToSNP := getIndexToSNP()
 	callpairs, correct, incorrect := getCallpairs(indexToSNP, SNPtoCall)
 	printAndCalculateMismatches(callpairs, correct, incorrect)
 }
