@@ -17,28 +17,28 @@ usage:
 output:
 
     (...)
-    ApiCall: AT     RawDataCall:    Total: 4
+    APICall: AT     RawDataCall:    Total: 4
     SNPS: rs2557018, rs2571902, rs2573893, rs2751692,
 
-    ApiCall: CG     RawDataCall:    Total: 3
+    APICall: CG     RawDataCall:    Total: 3
     SNPS: rs2535092, rs2557825, rs2915713,
 
-    ApiCall: TT     RawDataCall:    Total: 2
+    APICall: TT     RawDataCall:    Total: 2
     SNPS: rs1152098, rs35844236,
 
-    ApiCall: DI     RawDataCall:    Total: 1
+    APICall: DI     RawDataCall:    Total: 1
     SNPS: i4000257,
 
-    ApiCall: __     RawDataCall: TT Total: 1
+    APICall: __     RawDataCall: TT Total: 1
     SNPS: rs429358,
 
-    ApiCall: DI     RawDataCall: D  Total: 1
+    APICall: DI     RawDataCall: D  Total: 1
     SNPS: rs3838646,
 
     Same: 1046257, Mismatches: 1701, Same: 99.837685%
 
 Note that the vast majority of "mismatches" are false alarms, that
 come from hemizygous calls that have been smushed in the RawData,
-but not in the API, (i.e., ApiCall: BB, RawDataCall: B).
+but not in the API, (i.e., APICall: BB, RawDataCall: B).
 They are not included in the output, but you may change that with the variable
-```FALSE_ALARMS``` in the script.
+```falseAlarms``` in the script.
