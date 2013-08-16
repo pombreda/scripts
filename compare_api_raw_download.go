@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	FALSE_ALARMS = map[string]bool{
+	falseAlarms = map[string]bool{
 		"AA|A": true,
 		"CC|C": true,
 		"GG|G": true,
@@ -25,29 +25,35 @@ var (
 		"__|":  true,
 		"--|":  true,
 	}
-	FLAGS            = []string{"a", "k", "r"}
-	filename_rawdata string
-	filename_apidata string
-	filename_key     string
+	flags           = []string{"a", "k", "r"}
+	filenameRawdata string
+	filenameAPIdata string
+	filenameKey     string
 )
 
+// CallPair correlates an APICall (AA) with a RawDataCall (hopefully also AA)
 type CallPair struct {
-	ApiCall     string
+	APICall     string
 	RawDataCall string
 }
 
+// Mismatch is the type of mismatch and how many times they occur in the genome
 type Mismatch struct {
 	CallPair
 	Count int
 }
 
+// GenomesEndpoint is a container to unmarshal data from
+// api.23andme.com/1/genomes/:profile_id/
 type GenomesEndpoint struct {
-	Id     string
+	ID     string `json:"id"`
 	Genome string
 }
 
+// SNP is just a more semantic name for something like rs124814
 type SNP string
 
+// Mismatches is a simple array of Mismatch
 type Mismatches []Mismatch
 
 // For sorting
@@ -55,13 +61,13 @@ func (m Mismatches) Swap(i, j int)      { m[i], m[j] = m[j], m[i] }
 func (m Mismatches) Len() int           { return len(m) }
 func (m Mismatches) Less(i, j int) bool { return m[i].Count > m[j].Count }
 
-func getSNPstoCall(filename_rawdata string) *map[string]string {
+func getSNPstoCall(filenameRawdata string) *map[string]string {
 	var (
 		file *os.File
 		line []byte
 		err  error
 	)
-	if file, err = os.Open(filename_rawdata); err != nil {
+	if file, err = os.Open(filenameRawdata); err != nil {
 		log.Fatal(err)
 	}
 	defer file.Close()
@@ -81,14 +87,14 @@ func getSNPstoCall(filename_rawdata string) *map[string]string {
 	return &SNPtoCall
 }
 
-func getIndexToSNP(filename_key string) *map[int64]string {
+func getIndexToSNP(filenameKey string) *map[int64]string {
 	var (
 		file *os.File
 		line []byte
 		err  error
 	)
 	indexToSNP := make(map[int64]string, 1050000)
-	if file, err = os.Open(filename_key); err != nil {
+	if file, err = os.Open(filenameKey); err != nil {
 		log.Fatal(err)
 	}
 	defer file.Close()
@@ -111,25 +117,25 @@ func getIndexToSNP(filename_key string) *map[int64]string {
 	return &indexToSNP
 }
 
-func getCallpairs(filename_apidata string, indexToSNP *map[int64]string,
+func getCallpairs(filenameAPIdata string, indexToSNP *map[int64]string,
 	SNPtoCall *map[string]string) (callpairs map[CallPair][]SNP, correct, incorrect int) {
 	var err error
 	callpairs = make(map[CallPair][]SNP, 10)
-	jsondata, err := ioutil.ReadFile(filename_apidata)
+	jsondata, err := ioutil.ReadFile(filenameAPIdata)
 	if err != nil {
 		log.Fatal(err)
 	}
 	var genomes GenomesEndpoint
 	json.Unmarshal(jsondata, &genomes)
 	for index := 0; index < len(genomes.Genome); index += 2 {
-		api_call := fmt.Sprintf("%s%s", string(genomes.Genome[index]), string(genomes.Genome[index+1]))
+		apiCall := fmt.Sprintf("%s%s", string(genomes.Genome[index]), string(genomes.Genome[index+1]))
 		snpstr, _ := (*indexToSNP)[int64(index/2)]
-		raw_data_call, _ := (*SNPtoCall)[snpstr]
+		rawdataCall, _ := (*SNPtoCall)[snpstr]
 		snp := SNP(snpstr)
 		// Add mismatches; some are not true mismatches
-		false_alarm := FALSE_ALARMS[fmt.Sprintf("%s|%s", api_call, raw_data_call)]
-		if (api_call != raw_data_call) && !false_alarm {
-			callpair := CallPair{ApiCall: api_call, RawDataCall: raw_data_call}
+		falseAlarm := falseAlarms[fmt.Sprintf("%s|%s", apiCall, rawdataCall)]
+		if (apiCall != rawdataCall) && !falseAlarm {
+			callpair := CallPair{APICall: apiCall, RawDataCall: rawdataCall}
 			if _, found := callpairs[callpair]; !found {
 				callpairs[callpair] = []SNP{snp}
 			} else {
@@ -146,12 +152,12 @@ func getCallpairs(filename_apidata string, indexToSNP *map[int64]string,
 func printAndCalculateMismatches(callpairs map[CallPair][]SNP, correct, incorrect int) {
 	mismatches := Mismatches{}
 	for callpair, snps := range callpairs {
-		mismatch := Mismatch{CallPair: CallPair{ApiCall: callpair.ApiCall, RawDataCall: callpair.RawDataCall}, Count: len(snps)}
+		mismatch := Mismatch{CallPair: CallPair{APICall: callpair.APICall, RawDataCall: callpair.RawDataCall}, Count: len(snps)}
 		mismatches = append(mismatches, mismatch)
 	}
 	sort.Sort(mismatches)
 	for _, mismatch := range mismatches {
-		fmt.Printf("ApiCall: %s\tRawDataCall: %s\tTotal: %d\t\n", mismatch.ApiCall, mismatch.RawDataCall, mismatch.Count)
+		fmt.Printf("APICall: %s\tRawDataCall: %s\tTotal: %d\t\n", mismatch.APICall, mismatch.RawDataCall, mismatch.Count)
 		buffer := bytes.Buffer{}
 		buffer.WriteString("SNPS: ")
 		for i, snp := range callpairs[mismatch.CallPair] {
@@ -167,15 +173,15 @@ func printAndCalculateMismatches(callpairs map[CallPair][]SNP, correct, incorrec
 }
 
 func init() {
-	flag.StringVar(&filename_rawdata, "r", "", "filename of raw data from https://www.23andme.com/you/download/ file (unzipped)")
-	flag.StringVar(&filename_apidata, "a", "", "filename of API data from https://api.23andme.com/1/genomes/:profile_id/")
-	flag.StringVar(&filename_key, "k", "", "filename of downloaded https://api.23andme.com/res/txt/snps.data")
+	flag.StringVar(&filenameRawdata, "r", "", "filename of raw data from https://www.23andme.com/you/download/ file (unzipped)")
+	flag.StringVar(&filenameAPIdata, "a", "", "filename of API data from https://api.23andme.com/1/genomes/:profile_id/")
+	flag.StringVar(&filenameKey, "k", "", "filename of downloaded https://api.23andme.com/res/txt/snps.data")
 }
 
 func main() {
 	flag.Parse()
 	// Require all command-line arguments
-	for _, name := range FLAGS {
+	for _, name := range flags {
 		f := flag.Lookup(name)
 		if f.Value.String() == f.DefValue {
 			fmt.Printf("Must pass -%s: %s\n", f.Name, f.Usage)
@@ -183,8 +189,8 @@ func main() {
 		}
 	}
 
-	SNPtoCall := getSNPstoCall(filename_rawdata)
-	indexToSNP := getIndexToSNP(filename_key)
-	callpairs, correct, incorrect := getCallpairs(filename_apidata, indexToSNP, SNPtoCall)
+	SNPtoCall := getSNPstoCall(filenameRawdata)
+	indexToSNP := getIndexToSNP(filenameKey)
+	callpairs, correct, incorrect := getCallpairs(filenameAPIdata, indexToSNP, SNPtoCall)
 	printAndCalculateMismatches(callpairs, correct, incorrect)
 }
