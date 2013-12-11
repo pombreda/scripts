@@ -15,6 +15,7 @@ import (
 )
 
 var (
+	// Don't be alerted by the following (API Call|Raw Data call) mismatches
 	falseAlarms = map[string]bool{
 		"AA|A": true,
 		"CC|C": true,
@@ -63,9 +64,9 @@ func (m Mismatches) Less(i, j int) bool { return m[i].Count > m[j].Count }
 
 func getSNPstoCall(filenameRawdata string) *map[string]string {
 	var (
-		file *os.File
-		line []byte
-		err  error
+		file      *os.File
+		lineBytes []byte
+		err       error
 	)
 	if file, err = os.Open(filenameRawdata); err != nil {
 		log.Fatal(err)
@@ -74,14 +75,14 @@ func getSNPstoCall(filenameRawdata string) *map[string]string {
 	reader := bufio.NewReader(file)
 	SNPtoCall := make(map[string]string, 1050000)
 	for {
-		if line, _, err = reader.ReadLine(); err != nil {
+		if lineBytes, _, err = reader.ReadLine(); err != nil {
 			break
 		}
-		linestring := string(line)
-		if strings.HasPrefix(linestring, "#") {
+		line := string(lineBytes)
+		if strings.HasPrefix(line, "#") {
 			continue
 		}
-		val := strings.Split(linestring, "\t")
+		val := strings.Split(line, "\t")
 		SNPtoCall[val[0]] = val[3]
 	}
 	return &SNPtoCall
@@ -89,9 +90,9 @@ func getSNPstoCall(filenameRawdata string) *map[string]string {
 
 func getIndexToSNP(filenameKey string) *map[int64]string {
 	var (
-		file *os.File
-		line []byte
-		err  error
+		file      *os.File
+		lineBytes []byte
+		err       error
 	)
 	indexToSNP := make(map[int64]string, 1050000)
 	if file, err = os.Open(filenameKey); err != nil {
@@ -100,14 +101,14 @@ func getIndexToSNP(filenameKey string) *map[int64]string {
 	defer file.Close()
 	reader := bufio.NewReader(file)
 	for {
-		if line, _, err = reader.ReadLine(); err != nil {
+		if lineBytes, _, err = reader.ReadLine(); err != nil {
 			break
 		}
-		linestring := string(line)
-		if strings.HasPrefix(linestring, "#") || strings.HasPrefix(linestring, "index") {
+		line := string(lineBytes)
+		if strings.HasPrefix(line, "#") || strings.HasPrefix(line, "index") {
 			continue
 		}
-		val := strings.Split(linestring, "\t")
+		val := strings.Split(line, "\t")
 		var index int64
 		if index, err = strconv.ParseInt(val[0], 10, 32); err != nil {
 			break
