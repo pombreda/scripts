@@ -26,7 +26,6 @@ var (
 		"__|":  true,
 		"--|":  true,
 	}
-	flags           = []string{"a", "k", "r"}
 	filenameRawdata string
 	filenameAPIdata string
 	filenameKey     string
@@ -182,13 +181,12 @@ func init() {
 func main() {
 	flag.Parse()
 	// Require all command-line arguments
-	for _, name := range flags {
-		f := flag.Lookup(name)
+	flag.VisitAll(func(f *flag.Flag) {
 		if f.Value.String() == f.DefValue {
 			fmt.Printf("Must pass -%s: %s\n", f.Name, f.Usage)
 			os.Exit(1)
 		}
-	}
+	})
 
 	SNPtoCall := getSNPstoCall(filenameRawdata)
 	indexToSNP := getIndexToSNP(filenameKey)
